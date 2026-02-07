@@ -1,0 +1,20 @@
+current directory: /home/laura.sa/Documentos/youse/fiap/fiap-eng-software-crypto-mvp/vendor/bundle/ruby/3.0.0/gems/bootsnap-1.22.0/ext/bootsnap
+/home/laura.sa/.rbenv/versions/3.0.2/bin/ruby -I /home/laura.sa/.rbenv/versions/3.0.2/lib/ruby/3.0.0 -r ./siteconf20260207-168402-n4ojyo.rb extconf.rb
+checking for fdatasync() in unistd.h... yes
+checking for fstatat() in sys/stat.h... yes
+checking for whether -D_GNU_SOURCE is accepted as CPPFLAGS... yes
+checking for whether -O3 is accepted as CFLAGS... yes
+checking for whether -std=c99 is accepted as CFLAGS... yes
+creating Makefile
+
+current directory: /home/laura.sa/Documentos/youse/fiap/fiap-eng-software-crypto-mvp/vendor/bundle/ruby/3.0.0/gems/bootsnap-1.22.0/ext/bootsnap
+make DESTDIR\= clean
+
+current directory: /home/laura.sa/Documentos/youse/fiap/fiap-eng-software-crypto-mvp/vendor/bundle/ruby/3.0.0/gems/bootsnap-1.22.0/ext/bootsnap
+make DESTDIR\=
+compiling bootsnap.c
+linking shared-object bootsnap/bootsnap.so
+
+current directory: /home/laura.sa/Documentos/youse/fiap/fiap-eng-software-crypto-mvp/vendor/bundle/ruby/3.0.0/gems/bootsnap-1.22.0/ext/bootsnap
+make DESTDIR\= install
+/usr/bin/install -c -m 0755 bootsnap.so ./.gem.20260207-168402-h2ck1u/bootsnap

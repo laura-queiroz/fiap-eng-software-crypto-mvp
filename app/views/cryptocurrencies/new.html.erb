@@ -1,0 +1,13 @@
+<h1>Nova criptomoeda</h1>
+<%= form_with url: cryptocurrencies_path, method: :post, local: true do |f| %>
+  <label>Nome</label>
+  <%= f.text_field :name, required: true, placeholder: "Bitcoin" %>
+  <label>Símbolo</label>
+  <%= f.text_field :symbol, required: true, placeholder: "BTC" %>
+  <label>Preço</label>
+  <%= f.number_field :price, required: true, step: :any, placeholder: "50000" %>
+  <label>Imagem (URL)</label>
+  <%= f.text_field :image, placeholder: "https://..." %>
+  <%= f.submit "Criar" %>
+<% end %>
+<p><a href="/cryptocurrencies" class="btn secondary">Voltar</a></p>

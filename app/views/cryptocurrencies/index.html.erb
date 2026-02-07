@@ -1,0 +1,28 @@
+<h1>Criptomoedas</h1>
+<p><a href="/cryptocurrencies/new" class="btn">Nova moeda</a></p>
+<% if @cryptocurrencies && @cryptocurrencies.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nome</th>
+        <th>Símbolo</th>
+        <th>Preço</th>
+        <th>Imagem</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @cryptocurrencies.each do |c| %>
+        <tr>
+          <td><%= c[:id] %></td>
+          <td><%= c[:name] %></td>
+          <td><%= c[:symbol] %></td>
+          <td><%= c[:price] %></td>
+          <td><%= c[:image].present? ? "Sim" : "—" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>Nenhuma moeda cadastrada. <a href="/cryptocurrencies/new">Criar primeira moeda</a>.</p>
+<% end %>

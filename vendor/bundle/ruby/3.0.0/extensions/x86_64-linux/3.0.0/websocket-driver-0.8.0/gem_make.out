@@ -1,0 +1,15 @@
+current directory: /home/laura.sa/Documentos/youse/fiap/fiap-eng-software-crypto-mvp/vendor/bundle/ruby/3.0.0/gems/websocket-driver-0.8.0/ext/websocket-driver
+/home/laura.sa/.rbenv/versions/3.0.2/bin/ruby -I /home/laura.sa/.rbenv/versions/3.0.2/lib/ruby/3.0.0 -r ./siteconf20260207-168402-2juxeo.rb extconf.rb
+creating Makefile
+
+current directory: /home/laura.sa/Documentos/youse/fiap/fiap-eng-software-crypto-mvp/vendor/bundle/ruby/3.0.0/gems/websocket-driver-0.8.0/ext/websocket-driver
+make DESTDIR\= clean
+
+current directory: /home/laura.sa/Documentos/youse/fiap/fiap-eng-software-crypto-mvp/vendor/bundle/ruby/3.0.0/gems/websocket-driver-0.8.0/ext/websocket-driver
+make DESTDIR\=
+compiling websocket_mask.c
+linking shared-object websocket_mask.so
+
+current directory: /home/laura.sa/Documentos/youse/fiap/fiap-eng-software-crypto-mvp/vendor/bundle/ruby/3.0.0/gems/websocket-driver-0.8.0/ext/websocket-driver
+make DESTDIR\= install
+/usr/bin/install -c -m 0755 websocket_mask.so ./.gem.20260207-168402-ruud7p

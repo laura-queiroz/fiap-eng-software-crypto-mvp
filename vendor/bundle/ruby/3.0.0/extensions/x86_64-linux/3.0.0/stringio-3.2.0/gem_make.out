@@ -1,0 +1,16 @@
+current directory: /home/laura.sa/Documentos/youse/fiap/fiap-eng-software-crypto-mvp/vendor/bundle/ruby/3.0.0/gems/stringio-3.2.0/ext/stringio
+/home/laura.sa/.rbenv/versions/3.0.2/bin/ruby -I /home/laura.sa/.rbenv/versions/3.0.2/lib/ruby/3.0.0 -r ./siteconf20260207-168402-f33ywx.rb extconf.rb
+checking for rb_io_mode_t in ruby/io.h... no
+creating Makefile
+
+current directory: /home/laura.sa/Documentos/youse/fiap/fiap-eng-software-crypto-mvp/vendor/bundle/ruby/3.0.0/gems/stringio-3.2.0/ext/stringio
+make DESTDIR\= clean
+
+current directory: /home/laura.sa/Documentos/youse/fiap/fiap-eng-software-crypto-mvp/vendor/bundle/ruby/3.0.0/gems/stringio-3.2.0/ext/stringio
+make DESTDIR\=
+compiling stringio.c
+linking shared-object stringio.so
+
+current directory: /home/laura.sa/Documentos/youse/fiap/fiap-eng-software-crypto-mvp/vendor/bundle/ruby/3.0.0/gems/stringio-3.2.0/ext/stringio
+make DESTDIR\= install
+/usr/bin/install -c -m 0755 stringio.so ./.gem.20260207-168402-ju4ys6

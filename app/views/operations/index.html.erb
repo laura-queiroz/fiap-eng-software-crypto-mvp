@@ -1,0 +1,32 @@
+<h1>Operações</h1>
+<p><a href="/operations/new" class="btn">Nova operação</a></p>
+<% if @operations && @operations.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Moeda ID</th>
+        <th>Tipo</th>
+        <th>Quantidade</th>
+        <th>Preço un.</th>
+        <th>Custo</th>
+        <th>Data</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @operations.each do |o| %>
+        <tr>
+          <td><%= o[:id] %></td>
+          <td><%= o[:cryptocurrency_id] %></td>
+          <td><%= o[:operation_type] %></td>
+          <td><%= o[:amount] %></td>
+          <td><%= o[:cryptocurrency_price] %></td>
+          <td><%= o[:cost] %></td>
+          <td><%= o[:operation_date] %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>Nenhuma operação. <a href="/operations/new">Criar primeira operação</a>.</p>
+<% end %>

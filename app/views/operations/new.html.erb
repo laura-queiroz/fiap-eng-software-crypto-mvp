@@ -1,0 +1,12 @@
+<h1>Nova operação</h1>
+<%= form_with url: operations_path, method: :post, local: true do |f| %>
+  <label>ID da criptomoeda</label>
+  <%= f.number_field :cryptocurrency_id, required: true, min: 1, placeholder: "1" %>
+  <label>Tipo</label>
+  <%= f.select :operation_type, [["Compra", "buy"], ["Venda", "sell"]], {}, required: true %>
+  <label>Quantidade</label>
+  <%= f.number_field :amount, required: true, step: :any, min: 0.0001, placeholder: "0.5" %>
+  <%= f.submit "Criar" %>
+<% end %>
+<p><a href="/operations" class="btn secondary">Voltar</a></p>
+<p><small>Liste as moedas em <a href="/cryptocurrencies">/cryptocurrencies</a> para ver os IDs.</small></p>
