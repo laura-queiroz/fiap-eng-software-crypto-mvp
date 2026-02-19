@@ -21,6 +21,8 @@ rails server
 
 Acesse: **http://localhost:3000**
 
+![Home](images/home_screen/home.png)
+
 ## Rotas e uso
 
 ### Criptomoedas
@@ -71,8 +73,9 @@ curl -X POST http://localhost:3000/operations \
 ## Estrutura do projeto
 
 - **Models:** `Cryptocurrency`, `Operation` (classes Ruby, sem ActiveRecord).
-- **Repositório:** `Repositories::InMemoryStore` (arrays em memória, IDs sequenciais).
-- **Controllers:** retornam JSON; em requisições HTML servem formulários e listagens.
+- **Repositórios:** `CryptocurrencyRepository`, `OperationRepository` (persistência em memória por entidade).
+- **Serviços:** camada de aplicação em `app/services` (Create/Update/Destroy para cryptocurrencies, Create para operations).
+- **Controllers:** delegam para serviços e repositórios; retornam JSON e, em HTML, formulários e listagens.
 - **Views:** formulários em `app/views/cryptocurrencies/new.html.erb` e `app/views/operations/new.html.erb`.
 
 Os dados são perdidos ao reiniciar o servidor (comportamento esperado do MVP).

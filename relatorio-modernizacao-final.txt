@@ -1,0 +1,79 @@
+RELATÓRIO DE MODERNIZAÇÃO
+
+
+1. Contexto inicial
+
+
+O projeto é um MVP acadêmico em Ruby on Rails (modo API) para um mini sistema de moedas digitais. A aplicação foi concebida sem banco de dados: os dados são mantidos em memória e os models são classes Ruby simples (POROs), sem ActiveRecord. Os controllers atendem tanto requisições JSON quanto HTML para formulários de listagem e criação de criptomoedas e de operações (compra/venda). O foco original era didático; a base de código, porém, precisava ser auditada e refatorada para ganhar sustentabilidade, segurança e qualidade arquitetural sem alterar funcionalidades nem rotas expostas. A auditoria técnica identificou problemas de arquitetura, violações de SOLID, riscos de segurança e code smells que motivaram duas fases de refatoração: uma estrutural (Fase 1) e outra voltada a segurança e consistência (Fase 2). Este relatório consolida o contexto, os problemas, as refatorações aplicadas, o estado atual e os próximos passos recomendados.
+
+
+2. Principais problemas
+
+
+2.1 Arquitetura e SOLID
+
+Havia um repositório único (Repositories::InMemoryStore) responsável por duas entidades (cryptocurrencies e operations), geração de IDs e métodos de busca, violando o princípio de responsabilidade única (SRP). Controllers concentravam validação, montagem de atributos, regras de negócio (data da operação, preço da criptomoeda), atribuição de ID e persistência, além da formatação da resposta, o que tornava as classes grossas e difíceis de testar. A aplicação dependia diretamente da implementação concreta do store, sem abstração para troca de persistência (DIP/OCP). O repositório estava em app/models/repositories/, misturando domínio e infraestrutura.
+
+
+2.2 Segurança e entrada de dados
+
+No OperationsController#create os parâmetros eram lidos diretamente de params, sem strong parameters, expondo o sistema a risco de mass assignment. Não havia uma lista explícita e única de parâmetros permitidos por recurso, o que dificultava auditoria e manutenção. A fronteira entre parâmetros da requisição e atributos de domínio não estava clara.
+
+
+2.3 Validação e erros
+
+Os models possuíam apenas valid? retornando true ou false, sem expor erros por atributo. As mensagens na API eram genéricas e definidas nos controllers/serviços. O tratamento de erros (not found, validação, recurso não encontrado) era repetido em vários pontos, sem padrão único de formato ou status HTTP.
+
+
+3. Refatorações aplicadas
+
+
+3.1 Fase 1 (estrutural)
+
+Foi removido o Repositories::InMemoryStore e criados dois repositórios por entidade: CryptocurrencyRepository e OperationRepository em app/repositories/, cada um com responsabilidade única (all, find, save, next_id e, no caso de cryptocurrency, delete_by_id). Foi introduzida a camada de serviços em app/services/: Cryptocurrencies::CreateService, UpdateService e DestroyService; Operations::CreateService. Os controllers passaram a delegar as operações de escrita aos serviços e a usar os repositórios apenas para leituras (index, show). Foi criado o objeto ServiceResult (success?, data, errors, error_code) como retorno padronizado dos serviços. As regras de negócio (atribuição de ID, data da operação, preço, persistência) foram movidas para os serviços. Os caminhos app/repositories e app/services foram adicionados a config.autoload_paths. Rotas e comportamento externo (status HTTP, formatos JSON/HTML) foram preservados.
+
+
+3.2 Fase 2 (segurança e consistência)
+
+Foi adotado strong parameters de forma consistente: em cada controller uma constante PERMITTED_PARAMS e um método privado (_params) que faz params.permit(PERMITTED_PARAMS).to_h.symbolize_keys; create e update passam a usar apenas esses métodos. Foi criado o concern Validatable (app/models/concerns/validatable.rb), com errors (hash por atributo), valid? e add_error; Cryptocurrency e Operation passaram a incluir Validatable e a implementar validate com mensagens por campo, e os serviços de criação retornam model.errors em falha de validação, expondo erros por campo na API. No ApplicationController foram adicionados render_not_found, render_validation_errors, render_resource_error e render_service_failure, e os controllers passaram a usar esses métodos para centralizar formato e status de erro. A separação entre params e domínio foi explicitada: controllers repassam apenas hashes produzidos pelos métodos _params; serviços recebem apenas hashes de atributos e não dependem de ActionController::Parameters.
+
+
+4. Estado atual do sistema
+
+
+4.1 Estrutura de camadas
+
+Models (app/models): entidades Cryptocurrency e Operation, com Validatable e validações por atributo. Repositórios (app/repositories): CryptocurrencyRepository e OperationRepository, persistência em memória por entidade. Serviços (app/services): ServiceResult e serviços de criação, atualização e destruição para cryptocurrencies e de criação para operations. Controllers (app/controllers): delegam escritas aos serviços e leituras aos repositórios; usam métodos privados para params permitidos e helpers do ApplicationController para erros.
+
+
+4.2 Segurança de entrada
+
+Todos os endpoints que recebem dados do cliente (create e update de cryptocurrencies, create de operations) utilizam strong parameters com lista explícita (PERMITTED_PARAMS). A superfície de entrada por recurso é auditável em um único lugar. A camada de aplicação não recebe params; apenas hashes de atributos já filtrados.
+
+
+4.3 Validação e respostas de erro
+
+Validações estão no domínio (Validatable + validate nos models) com mensagens por campo. A API retorna erros de validação no formato { errors: { atributo: ["mensagem"], ... } }. Not found e erros de recurso seguem formato padronizado (error, status) via helpers do ApplicationController.
+
+
+4.4 O que permanece inalterado
+
+Rotas (config/routes.rb) e comportamento externo da API e das telas foram mantidos. Não há autenticação nem autorização; todas as rotas continuam públicas. Não há proteção de host (config.hosts) em produção nem injeção de dependência nos controllers/serviços. Repositórios em memória não são thread-safe; o uso é adequado ao MVP atual. Persistência continua em memória; dados são perdidos ao reiniciar o servidor.
+
+
+5. Próximos passos
+
+
+5.1 Se o sistema for evoluir para produção ou ambiente compartilhado
+
+Introduzir autenticação (sessão, token ou biblioteca como Devise) e autorização por recurso; configurar config.hosts e host_authorization em production; garantir que config/master.key não seja versionado e considerar config.require_master_key = true em produção. Ao introduzir usuários, adicionar escopo (por exemplo user_id) para evitar IDOR.
+
+
+5.2 Se a persistência for migrada para banco de dados
+
+Implementar novas classes de repositório (por exemplo usando ActiveRecord) que respeitem a mesma interface (all, find, save, next_id, delete_by_id quando aplicável) e configurar a aplicação para usá-las; com a separação atual, controllers e serviços podem permanecer praticamente inalterados. Considerar sincronização (Mutex) ou persistência externa se o servidor for multi-thread antes da migração.
+
+
+5.3 Melhorias opcionais de arquitetura e qualidade
+
+Introduzir injeção de dependência (repositórios e eventualmente serviços injetados nos controllers ou em um container) para facilitar testes com doubles e troca de implementação em runtime. Padronizar suporte HTML/JSON em todas as actions que fizerem sentido (por exemplo update e destroy em cryptocurrencies). Considerar namespace e versionamento da API (por exemplo api/v1) se houver consumidores externos. Ampliar a suíte de testes automatizados para serviços, repositórios e controllers usando os novos pontos de extensão (ServiceResult, params permitidos, helpers de erro).

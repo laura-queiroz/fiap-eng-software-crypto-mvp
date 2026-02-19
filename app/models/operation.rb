@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Operation
+  include Validatable
+
   attr_accessor :id, :cryptocurrency_id, :operation_type, :amount, :cryptocurrency_price, :cost, :operation_date
 
   def initialize(attrs = {})
@@ -26,11 +28,13 @@ class Operation
     }
   end
 
-  def valid?
-    return false if cryptocurrency_id.to_i <= 0
-    return false unless %w[buy sell].include?(operation_type.to_s)
-    return false unless amount.is_a?(Numeric) && amount > 0
+  private
 
-    true
+  def validate
+    add_error(:cryptocurrency_id, "must be a valid cryptocurrency") if cryptocurrency_id.to_i <= 0
+    unless %w[buy sell].include?(operation_type.to_s)
+      add_error(:operation_type, "must be buy or sell")
+    end
+    add_error(:amount, "must be greater than 0") unless amount.is_a?(Numeric) && amount > 0
   end
 end

@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Cryptocurrency
+  include Validatable
+
   attr_accessor :id, :name, :symbol, :price, :image
 
   def initialize(attrs = {})
@@ -21,7 +23,13 @@ class Cryptocurrency
     }
   end
 
-  def valid?
-    name.to_s.strip != "" && symbol.to_s.strip != "" && price.is_a?(Numeric) && price >= 0
+  private
+
+  def validate
+    add_error(:name, "can't be blank") if name.to_s.strip.empty?
+    add_error(:symbol, "can't be blank") if symbol.to_s.strip.empty?
+    unless price.is_a?(Numeric) && price >= 0
+      add_error(:price, "must be present and greater than or equal to 0")
+    end
   end
 end

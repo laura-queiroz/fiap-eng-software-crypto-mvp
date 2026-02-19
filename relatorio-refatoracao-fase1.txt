@@ -1,0 +1,148 @@
+RELATÓRIO DE REFATORAÇÃO — FASE 1 (ESTRUTURAL)
+
+
+1. Problemas Resolvidos
+
+
+1.1 Repositório monolítico e violação de SRP
+
+Descrição do problema original:
+Uma única classe (Repositories::InMemoryStore) concentrava armazenamento de duas entidades (cryptocurrencies e operations), geração de IDs para ambas e métodos find. A classe tinha mais de uma razão para mudar e dificultava evolução e testes isolados.
+
+Técnica aplicada:
+Extract Class. A classe InMemoryStore foi substituída por duas classes independentes: CryptocurrencyRepository e OperationRepository, cada uma responsável por uma única entidade e localizadas em app/repositories/.
+
+Princípio atendido:
+SRP (Single Responsibility Principle).
+
+Benefício técnico obtido:
+Cada repositório tem uma única responsabilidade; adicionar nova entidade não exige alterar código existente; testes e manutenção podem ser feitos por entidade.
+
+
+1.2 Lógica de negócio nos controllers
+
+Descrição do problema original:
+Os controllers continham validação de modelos, montagem de atributos, definição de data e preço da operação, atribuição de ID, persistência e decisão de resposta. Isso tornava os controllers grossos e difíceis de testar e evoluir.
+
+Técnica aplicada:
+Introduce Service Layer. Foi criada a camada de serviços em app/services/ com: Cryptocurrencies::CreateService, Cryptocurrencies::UpdateService, Cryptocurrencies::DestroyService e Operations::CreateService. Os controllers passaram a delegar as operações de escrita aos serviços e apenas formatar a resposta (JSON/HTML).
+
+Princípio atendido:
+SRP (Single Responsibility Principle).
+
+Benefício técnico obtido:
+Controllers finos e focados em HTTP; regras de negócio centralizadas e testáveis em serviços; mesma lógica reutilizável fora do controller (por exemplo, jobs ou outros pontos de entrada).
+
+
+1.3 Dependência direta de implementação concreta de persistência
+
+Descrição do problema original:
+Controllers e fluxos dependiam diretamente da classe concreta Repositories::InMemoryStore. Não havia abstração que permitisse trocar a implementação de persistência (por exemplo, por banco de dados) sem alterar controllers.
+
+Técnica aplicada:
+Substituição de dependência e reorganização. Os controllers passaram a depender de CryptocurrencyRepository e OperationRepository. A persistência ficou encapsulada nos repositórios por entidade, em app/repositories/, separada de app/models/. A camada de serviços depende dos repositórios, e os controllers dependem dos serviços e dos repositórios apenas para leitura simples (index, show).
+
+Princípio atendido:
+DIP (Dependency Inversion Principle) em evolução — dependência de repositórios por entidade em vez de um store monolítico; preparação para futura injeção de dependência ou troca de implementação.
+
+Benefício técnico obtido:
+Redução de acoplamento; troca futura de persistência (por exemplo, para ActiveRecord) pode ser feita alterando apenas as classes de repositório, sem alterar controllers ou serviços na sua interface.
+
+
+1.4 Ausência de objeto de retorno padronizado para operações
+
+Descrição do problema original:
+Cada controller tratava sucesso e falha de forma ad hoc (ifs, early return, mensagens distintas), sem um contrato único de retorno para a camada de aplicação.
+
+Técnica aplicada:
+Introduce Parameter Object / Result Object. Foi criado ServiceResult (Struct com success?, data, errors, error_code) e métodos de classe success e failure. Todos os serviços passaram a retornar ServiceResult, e os controllers passaram a decidir resposta HTTP com base nesse resultado.
+
+Princípio atendido:
+Consistência e OCP — novos serviços seguem o mesmo contrato sem alterar a forma como os controllers tratam resultado.
+
+Benefício técnico obtido:
+Tratamento de resposta uniforme nos controllers; fácil extensão com novos códigos de erro (error_code); testes de serviços verificam apenas o ServiceResult retornado.
+
+
+1.5 Localização inadequada do repositório
+
+Descrição do problema original:
+O repositório estava em app/models/repositories/, misturando o conceito de modelo de domínio com infraestrutura de persistência.
+
+Técnica aplicada:
+Move Class. As novas classes de repositório foram criadas em app/repositories/ e os caminhos app/repositories e app/services foram adicionados a config.autoload_paths em config/application.rb.
+
+Princípio atendido:
+Organização por camada e separação de responsabilidades (domínio vs. persistência).
+
+Benefício técnico obtido:
+Estrutura mais clara: app/models para entidades, app/repositories para persistência, app/services para orquestração; alinhado a convenções de Clean Architecture / camadas de aplicação.
+
+
+1.6 Duplicação implícita de regras entre controller e domínio
+
+Descrição do problema original:
+Regras como "buscar cryptocurrency para obter preço", "definir operation_date como Time.now" e "atribuir id antes de persistir" estavam no controller, misturadas com formato de resposta.
+
+Técnica aplicada:
+Move Method. Essas regras foram deslocadas para os serviços (Operations::CreateService e Cryptocurrencies::CreateService), que passam a orquestrar repositórios e modelos. O controller apenas repassa parâmetros permitidos e interpreta o ServiceResult.
+
+Princípio atendido:
+SRP e separação entre camada de apresentação e camada de aplicação.
+
+Benefício técnico obtido:
+Alterações de regra de negócio passam a ser feitas nos serviços; menor risco de inconsistência entre JSON e HTML; testes de regras sem necessidade de request HTTP.
+
+
+2. Impacto na Arquitetura
+
+
+2.1 Novos componentes
+
+- app/repositories/cryptocurrency_repository.rb: repositório in-memory para Cryptocurrency (all, find, save, next_id, delete_by_id).
+- app/repositories/operation_repository.rb: repositório in-memory para Operation (all, find, save, next_id).
+- app/services/service_result.rb: objeto de retorno padronizado (success?, data, errors, error_code).
+- app/services/cryptocurrencies/create_service.rb: criação de criptomoeda com validação e persistência.
+- app/services/cryptocurrencies/update_service.rb: atualização de criptomoeda por id.
+- app/services/cryptocurrencies/destroy_service.rb: remoção por id (comportamento idempotente preservado).
+- app/services/operations/create_service.rb: criação de operação com validação, preço e data.
+
+2.2 Componentes removidos
+
+- app/models/repositories/in_memory_store.rb: removido; responsabilidades divididas entre CryptocurrencyRepository e OperationRepository.
+
+2.3 Fluxo de dados atual
+
+- Leituras (index, show): controller chama repositório (CryptocurrencyRepository ou OperationRepository) e formata resposta.
+- Escritas (create, update, destroy): controller chama o serviço correspondente com parâmetros permitidos; o serviço usa repositórios e modelos, retorna ServiceResult; o controller converte o resultado em resposta HTTP (JSON/HTML e status).
+
+2.4 Compatibilidade
+
+- Rotas inalteradas (config/routes.rb não foi modificado).
+- Comportamento externo preservado: mesmos status HTTP, mesmos formatos de corpo (JSON e HTML) e mesmas mensagens de erro utilizadas antes da refatoração.
+- Destroy continua retornando sempre 204 No Content, independentemente da existência do id, conforme comportamento original.
+
+
+3. Avaliação da Evolução Arquitetural
+
+
+3.1 Sustentabilidade
+
+A separação em repositórios por entidade e em camada de serviços reduz o acoplamento e concentra as regras de negócio em pontos únicos. Novas operações (por exemplo, relatórios ou novos casos de uso) podem ser implementadas como novos serviços ou novos métodos nos repositórios, sem sobrecarregar os controllers. A introdução de ServiceResult estabelece um contrato estável para sucesso e falha, facilitando evolução e testes.
+
+3.2 Preparação para mudança de persistência
+
+Os controllers não dependem mais de um store monolítico. A persistência está encapsulada em CryptocurrencyRepository e OperationRepository. Uma futura migração para banco de dados pode ser feita criando novas implementações (por exemplo, ActiveRecordCryptocurrencyRepository) que respeitem os mesmos métodos (all, find, save, next_id, delete_by_id quando aplicável) e configurando a aplicação para usar essas implementações, com impacto mínimo em controllers e serviços, desde que a interface dos repositórios seja mantida.
+
+3.3 Testabilidade
+
+Serviços e repositórios podem ser testados de forma isolada, sem necessidade de requisições HTTP. Os controllers podem ser testados com mocks ou stubs dos serviços e repositórios quando for introduzida injeção de dependência. O uso de ServiceResult permite assertions simples (result.success?, result.data, result.errors) nos testes de serviços.
+
+3.4 Limitações não abordadas nesta fase
+
+- Injeção de dependência: repositórios e serviços ainda são referenciados por nome de classe (CryptocurrencyRepository, Cryptocurrencies::CreateService). Para testes com doubles ou para troca de implementação em runtime, uma fase futura pode introduzir injeção via construtor ou container.
+- Validação e mensagens de erro: os modelos continuam com valid? sem lista de erros por campo; as mensagens de erro da API permanecem genéricas, conforme comportamento anterior.
+- Thread-safety: os repositórios em memória continuam usando variáveis de classe sem sincronização; adequado ao MVP atual; em cenário multi-thread seria necessário Mutex ou migração para persistência externa.
+- Proteção de rotas, strong parameters em operations e padronização de formatos (HTML em update/destroy) foram mantidos como estão, sem alteração de comportamento externo.
+
+Conclusão: A Fase 1 atinge o objetivo de refatoração estrutural com foco em SOLID, extração de lógica de negócio para serviços, repositórios por entidade e melhor organização, sem novas funcionalidades e com compatibilidade das rotas e do comportamento externo preservados.

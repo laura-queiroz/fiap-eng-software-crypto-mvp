@@ -1,0 +1,43 @@
+RELATÓRIO DE CONSOLIDAÇÃO FINAL
+
+1. Contexto geral
+
+O projeto consiste em um MVP acadêmico desenvolvido em Ruby on Rails no modo API para um mini sistema de moedas digitais. A aplicação foi concebida sem banco de dados, mantendo os dados exclusivamente em memória por meio de classes Ruby simples, sem uso de ActiveRecord. O foco inicial era didático, porém foi realizada uma auditoria técnica com o objetivo de melhorar a organização arquitetural, a segurança e a qualidade do código, preservando rotas e comportamento externo.
+
+2. Evolução arquitetural
+
+Após as duas fases de refatoração, o sistema passou a apresentar uma estrutura mais clara e sustentável. A principal evolução ocorreu na separação de responsabilidades. Os controllers deixaram de concentrar regras de negócio, validações e persistência, passando a atuar como camada de orquestração entre requisição e resposta. As regras de negócio foram movidas para serviços específicos por entidade, enquanto a persistência em memória passou a ser responsabilidade de repositórios dedicados.
+
+Os models permaneceram como representação do domínio e passaram a concentrar validações estruturadas por meio do concern Validatable. Essa organização reduziu acoplamento e aumentou a clareza da arquitetura.
+
+3. Organização em camadas
+
+A aplicação passou a apresentar uma divisão clara entre responsabilidades.
+
+3.1 Models representam as entidades do domínio e concentram validações por atributo.
+
+3.2 Repositories são responsáveis exclusivamente pela persistência em memória de cada entidade.
+
+3.3 Services encapsulam regras de negócio e retornam resultados padronizados por meio de um objeto de retorno estruturado.
+
+3.4 Controllers coordenam o fluxo da requisição, delegando escrita aos serviços e leitura aos repositórios, além de utilizar métodos centralizados para tratamento de erros.
+
+4. Segurança de entrada de dados
+
+Houve avanço significativo com a adoção consistente de strong parameters. Cada controller define explicitamente os parâmetros permitidos por meio de constantes e métodos privados específicos. Isso estabelece uma separação clara entre dados da requisição e atributos de domínio, reduzindo riscos como mass assignment e tornando auditável a superfície de entrada de dados.
+
+5. Validação e tratamento de erros
+
+Os models passaram a acumular erros por atributo, permitindo que a API retorne mensagens estruturadas no formato de erros por campo. O tratamento de erros foi centralizado no ApplicationController, garantindo padronização de formato e status HTTP. Respostas de validação, recurso não encontrado e falhas de serviço seguem agora um padrão consistente.
+
+6. Estado atual do sistema
+
+O sistema mantém a proposta original de MVP acadêmico, porém com melhor organização interna e maior robustez estrutural. A persistência continua sendo em memória, o que implica perda de dados ao reiniciar o servidor e ausência de garantias de concorrência em ambiente multi-thread.
+
+Não há autenticação nem autorização implementadas e todas as rotas permanecem públicas. Essas limitações são coerentes com o escopo didático do projeto.
+
+7. Conclusão
+
+O processo de modernização foi bem-sucedido. O sistema manteve o mesmo comportamento externo e as mesmas rotas, mas passou a contar com melhor separação de camadas, redução de acoplamento, maior segurança na manipulação de dados e padronização no tratamento de erros.
+
+O projeto evoluiu de um exercício técnico simples para um MVP estruturado, com base arquitetural consistente e preparado para futuras extensões, como introdução de banco de dados, autenticação de usuários ou versionamento de API.
